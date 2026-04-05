@@ -3,19 +3,19 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
-  runApp(const TelzenAdminApp());
+  runApp(const EasyBrickAdminApp());
 }
 
-class TelzenAdminApp extends StatelessWidget {
-  const TelzenAdminApp({super.key});
+class EasyBrickAdminApp extends StatelessWidget {
+  const EasyBrickAdminApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Telzen Admin',
+      title: 'Easy Brick Admin',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF00C896)),
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFE47A48)),
         useMaterial3: true,
       ),
       home: const SplashScreen(),
@@ -53,8 +53,8 @@ class _SplashScreenState extends State<SplashScreen> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              const Color(0xFF006752),
-              const Color(0xFF00C896),
+              const Color(0xFFE47A48),
+              const Color(0xFFF5E7CE),
             ],
           ),
         ),
@@ -79,7 +79,7 @@ class _SplashScreenState extends State<SplashScreen> {
               const SizedBox(height: 30),
               // App Title
               const Text(
-                'Telzen Admin',
+                'Easy Brick Admin',
                 style: TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
@@ -146,7 +146,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
         ),
       )
       // Change this URL to your actual admin panel URL
-      ..loadRequest(Uri.parse('https://www.admin.telzen.net/'));
+      ..loadRequest(Uri.parse('https://admin.easybrick.xyz/'));
   }
 
   // Save credentials to local storage

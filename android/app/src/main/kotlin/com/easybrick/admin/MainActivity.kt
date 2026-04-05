@@ -1,4 +1,4 @@
-package com.example.webview_admin
+package com.easybrick.admin
 
 import io.flutter.embedding.android.FlutterActivity
 
