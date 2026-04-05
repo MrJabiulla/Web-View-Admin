@@ -1,4 +1,4 @@
-package com.easybrick.admin
+package com.truck.admin
 
 import io.flutter.embedding.android.FlutterActivity
 

@@ -3,19 +3,19 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
-  runApp(const EasyBrickAdminApp());
+  runApp(const TruckAdminApp());
 }
 
-class EasyBrickAdminApp extends StatelessWidget {
-  const EasyBrickAdminApp({super.key});
+class TruckAdminApp extends StatelessWidget {
+  const TruckAdminApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Easy Brick Admin',
+      title: 'Truck Admin',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFE47A48)),
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFFED600)),
         useMaterial3: true,
       ),
       home: const SplashScreen(),
@@ -53,8 +53,8 @@ class _SplashScreenState extends State<SplashScreen> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              const Color(0xFFE47A48),
-              const Color(0xFFF5E7CE),
+              const Color(0xFFFED600),
+              const Color(0xFFFDFFC0),
             ],
           ),
         ),
@@ -79,7 +79,7 @@ class _SplashScreenState extends State<SplashScreen> {
               const SizedBox(height: 30),
               // App Title
               const Text(
-                'Easy Brick Admin',
+                'Truck Admin',
                 style: TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
@@ -146,7 +146,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
         ),
       )
       // Change this URL to your actual admin panel URL
-      ..loadRequest(Uri.parse('https://admin.easybrick.xyz/'));
+      ..loadRequest(Uri.parse('https://admin.easytruck.xyz/'));
   }
 
   // Save credentials to local storage
