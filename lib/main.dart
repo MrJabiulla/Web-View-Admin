@@ -60,8 +60,8 @@ class _SplashScreenState extends State<SplashScreen> {
         ),
         child: Center(
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
               // Logo/Icon
               Container(
                 width: 100,
@@ -207,21 +207,23 @@ class _WebViewScreenState extends State<WebViewScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        children: [
-          Transform.scale(
-            scale: _zoomLevel,
-            alignment: Alignment.topCenter,
-            child: WebViewWidget(controller: _webViewController),
-          ),
-          if (isLoading)
-            Container(
-              color: Colors.white.withOpacity(0.7),
-              child: const Center(
-                child: CircularProgressIndicator(),
-              ),
+      body: SafeArea(
+        child: Stack(
+          children: [
+            Transform.scale(
+              scale: _zoomLevel,
+              alignment: Alignment.topCenter,
+              child: WebViewWidget(controller: _webViewController),
             ),
-        ],
+            if (isLoading)
+              Container(
+                color: Colors.white.withOpacity(0.7),
+                child: const Center(
+                  child: CircularProgressIndicator(),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
