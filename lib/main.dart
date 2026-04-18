@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -20,6 +21,7 @@ class TelzenAdminApp extends StatelessWidget {
       ),
       home: const SplashScreen(),
     );
+
   }
 }
 
@@ -34,6 +36,9 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
+
+
+
     // Navigate to WebView after 3 seconds
     Future.delayed(const Duration(seconds: 3), () {
       if (mounted) {
@@ -124,13 +129,25 @@ class _WebViewScreenState extends State<WebViewScreen> {
   @override
   void initState() {
     super.initState();
+
     _initializeWebView();
+
+    Future.microtask(() async {
+      var status = await Permission.camera.status;
+      if (status.isDenied) {
+        await Permission.camera.request();
+      }
+    },);
+
   }
 
   void _initializeWebView() {
-    _webViewController = WebViewController()
+    _webViewController = WebViewController(
+      onPermissionRequest: (request) {
+        request.grant();
+      },
+    )
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      // Enable cookies to persist credentials
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageStarted: (String url) {
@@ -145,7 +162,6 @@ class _WebViewScreenState extends State<WebViewScreen> {
           },
         ),
       )
-      // Change this URL to your actual admin panel URL
       ..loadRequest(Uri.parse('https://www.admin.telzen.net/'));
   }
 
