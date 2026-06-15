@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -102,6 +104,9 @@ class _WebViewScreenState extends State<WebViewScreen> {
 
   static const double _refreshTriggerDistance = 90;
   static const double _maxPullIndicatorDistance = 76;
+  static const MethodChannel _nativeChannel = MethodChannel(
+    'etms.easytruck.xyz/native',
+  );
 
   @override
   void initState() {
@@ -135,6 +140,10 @@ class _WebViewScreenState extends State<WebViewScreen> {
               }
             },
           )
+          ..addJavaScriptChannel(
+            'EtmsNative',
+            onMessageReceived: _handleNativeBridgeMessage,
+          )
           ..setNavigationDelegate(
             NavigationDelegate(
               onPageFinished: (String url) {
@@ -153,6 +162,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
                     report();
                   })();
                 ''');
+                _installNativeBridge();
               },
               onWebResourceError: (WebResourceError error) {
                 if (error.isForMainFrame == true) {
@@ -168,6 +178,144 @@ class _WebViewScreenState extends State<WebViewScreen> {
             ),
           )
           ..loadRequest(Uri.parse('https://etms.easytruck.xyz/'));
+  }
+
+  Future<void> _handleNativeBridgeMessage(JavaScriptMessage message) async {
+    try {
+      final payload = jsonDecode(message.message) as Map<String, dynamic>;
+      switch (payload['type']) {
+        case 'download':
+          await _nativeChannel.invokeMethod('saveBase64Download', {
+            'fileName': payload['fileName'] ?? 'memo.pdf',
+            'mimeType': payload['mimeType'] ?? 'application/octet-stream',
+            'base64': payload['base64'] ?? '',
+          });
+        case 'print':
+          await _nativeChannel.invokeMethod('printHtml', {
+            'title': payload['title'] ?? 'ETMS Memo',
+            'html': payload['html'] ?? '',
+          });
+      }
+    } catch (_) {
+      // Keep webpage alerts/errors in control if native bridging fails.
+    }
+  }
+
+  Future<void> _installNativeBridge() {
+    return _webViewController.runJavaScript(r'''
+      (function() {
+        if (window.__etmsNativeBridgeInstalled) return;
+        window.__etmsNativeBridgeInstalled = true;
+
+        function post(payload) {
+          if (window.EtmsNative && window.EtmsNative.postMessage) {
+            window.EtmsNative.postMessage(JSON.stringify(payload));
+          }
+        }
+
+        function sendPrintDocument(title, doc) {
+          var html = '';
+          try {
+            html = '<!doctype html>' + doc.documentElement.outerHTML;
+          } catch (_) {
+            html = '<!doctype html>' + document.documentElement.outerHTML;
+          }
+          post({
+            type: 'print',
+            title: title || document.title || 'ETMS Memo',
+            html: html
+          });
+        }
+
+        function installFramePrintBridge(frame) {
+          var attempts = 0;
+          var timer = setInterval(function() {
+            attempts += 1;
+            try {
+              if (frame.contentWindow && frame.contentDocument) {
+                frame.contentWindow.print = function() {
+                  sendPrintDocument(frame.contentDocument.title || document.title, frame.contentDocument);
+                };
+              }
+            } catch (_) {}
+            if (attempts >= 40) clearInterval(timer);
+          }, 50);
+        }
+
+        var originalCreateElement = document.createElement.bind(document);
+        document.createElement = function(tagName, options) {
+          var element = originalCreateElement(tagName, options);
+          if (String(tagName).toLowerCase() === 'iframe') {
+            installFramePrintBridge(element);
+          }
+          return element;
+        };
+
+        Array.prototype.slice.call(document.querySelectorAll('iframe')).forEach(installFramePrintBridge);
+
+        function sendDataUrlDownload(dataUrl, fileName) {
+          var match = /^data:([^;,]+)?(;base64)?,(.*)$/i.exec(dataUrl || '');
+          if (!match) return false;
+          var mimeType = match[1] || 'application/octet-stream';
+          var data = match[3] || '';
+          var base64 = match[2] ? data : btoa(decodeURIComponent(data));
+          post({
+            type: 'download',
+            fileName: fileName || 'memo.pdf',
+            mimeType: mimeType,
+            base64: base64
+          });
+          return true;
+        }
+
+        function sendBlobDownload(blobUrl, fileName) {
+          fetch(blobUrl)
+            .then(function(response) { return response.blob(); })
+            .then(function(blob) {
+              var reader = new FileReader();
+              reader.onloadend = function() {
+                var result = String(reader.result || '');
+                sendDataUrlDownload(result, fileName || 'memo.pdf');
+              };
+              reader.readAsDataURL(blob);
+            });
+          return true;
+        }
+
+        document.addEventListener('click', function(event) {
+          var anchor = event.target && event.target.closest
+            ? event.target.closest('a[download],a[href^="blob:"],a[href^="data:"]')
+            : null;
+          if (!anchor) return;
+
+          var href = anchor.href || '';
+          var fileName = anchor.getAttribute('download') || 'memo.pdf';
+          if (href.indexOf('blob:') === 0) {
+            event.preventDefault();
+            sendBlobDownload(href, fileName);
+          } else if (href.indexOf('data:') === 0 && sendDataUrlDownload(href, fileName)) {
+            event.preventDefault();
+          }
+        }, true);
+
+        var originalCreateObjectURL = URL.createObjectURL.bind(URL);
+        URL.createObjectURL = function(blob) {
+          var url = originalCreateObjectURL(blob);
+          setTimeout(function() {
+            var anchors = Array.prototype.slice.call(document.querySelectorAll('a[href="' + url + '"]'));
+            anchors.forEach(function(anchor) {
+              var fileName = anchor.getAttribute('download') || 'memo.pdf';
+              sendBlobDownload(url, fileName);
+            });
+          }, 0);
+          return url;
+        };
+
+        window.print = function() {
+          sendPrintDocument(document.title || 'ETMS Memo', document);
+        };
+      })();
+    ''');
   }
 
   String _getErrorMessage(WebResourceError error) {
