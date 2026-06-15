@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -21,6 +22,16 @@ class TelzenAdminApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF0F2744)),
         useMaterial3: true,
       ),
+      builder: (context, child) {
+        return Container(
+          color: Colors.white,
+          child: SafeArea(
+            bottom: Platform.isIOS ? false : true,
+            maintainBottomViewPadding: true,
+            child: child ?? const SizedBox.shrink(),
+          ),
+        );
+      },
       home: const WebViewScreen(),
     );
   }
@@ -402,41 +413,38 @@ class _WebViewScreenState extends State<WebViewScreen> {
       },
       child: Scaffold(
         backgroundColor: Colors.white,
-        body: SafeArea(
-          bottom: false,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              Listener(
-                onPointerDown: _handlePointerDown,
-                onPointerMove: _handlePointerMove,
-                onPointerUp: _handlePointerEnd,
-                onPointerCancel: _handlePointerEnd,
-                child: WebViewWidget(controller: _webViewController),
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
+            Listener(
+              onPointerDown: _handlePointerDown,
+              onPointerMove: _handlePointerMove,
+              onPointerUp: _handlePointerEnd,
+              onPointerCancel: _handlePointerEnd,
+              child: WebViewWidget(controller: _webViewController),
+            ),
+            _PullToRefreshIndicator(
+              pullDistance: _pullDistance,
+              maxPullDistance: _maxPullIndicatorDistance,
+              isRefreshing: _isRefreshing,
+            ),
+            IgnorePointer(
+              ignoring: !_isInitialPageLoading,
+              child: AnimatedOpacity(
+                opacity: _isInitialPageLoading ? 1 : 0,
+                duration: const Duration(milliseconds: 250),
+                child: const SplashScreen(),
               ),
-              _PullToRefreshIndicator(
-                pullDistance: _pullDistance,
-                maxPullDistance: _maxPullIndicatorDistance,
-                isRefreshing: _isRefreshing,
+            ),
+            if (_hasError)
+              _ErrorPage(
+                message: _errorDescription,
+                onRetry: () {
+                  setState(() => _hasError = false);
+                  _webViewController.reload();
+                },
               ),
-              IgnorePointer(
-                ignoring: !_isInitialPageLoading,
-                child: AnimatedOpacity(
-                  opacity: _isInitialPageLoading ? 1 : 0,
-                  duration: const Duration(milliseconds: 250),
-                  child: const SplashScreen(),
-                ),
-              ),
-              if (_hasError)
-                _ErrorPage(
-                  message: _errorDescription,
-                  onRetry: () {
-                    setState(() => _hasError = false);
-                    _webViewController.reload();
-                  },
-                ),
-            ],
-          ),
+          ],
         ),
       ),
     );
